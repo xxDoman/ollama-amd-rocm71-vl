@@ -29,8 +29,8 @@ Quick host checks:
 ls -l /dev/kfd
 ls -l /dev/dri/renderD*
 groups
-Run
 ```
+Run
 
 Create persistent volume for models:
 ```bash
