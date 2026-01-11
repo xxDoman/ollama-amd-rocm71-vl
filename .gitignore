@@ -1,12 +1,14 @@
-# ROCm / AMD packages
-*.deb
+# nie wrzucamy pełnych paczek/artefaktów instalacyjnych
+rocblas-7.1.0-2-x86_64.pkg/
 *.pkg
+*.zst
+*.tar
+*.tar.gz
 *.tgz
+*.deb
 
-# Unpacked ROCm content
-usr/
-906/
-
-# Build / temp
-*.log
-*.tmp
+# ALE te konkretne pliki chcemy śledzić (negacja)
+!amdgpu-install_7.1.70100-1_all.deb
+!ollama-0.13.5-rocm-gfx906.tgz
+!906/
+!906/**
