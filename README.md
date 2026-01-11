@@ -1,88 +1,165 @@
-# Ollama + ROCm 7.1 dla AMD MI50 (gfx906) - Vision Language Support
+Ollama 0.13.5 + ROCm 7.1 (VL) for AMD Instinct MI50 (gfx906)
+Docker image with Ollama 0.13.5, ROCm 7.1 user‑space and Tensile libraries (gfx906), tested on AMD Radeon Instinct MI50 32 GB.
 
+Docker Hub (repo):
 https://hub.docker.com/r/xxdoman/ollama-amd-rocm71-vl
 
-Pojedynczy obraz Docker do uruchomienia **Ollama z ROCm 7.1** na **AMD Instinct MI50 (gfx906)**. Ta wersja została zoptymalizowana pod kątem obsługi modeli **Vision Language (VL)**, takich jak Qwen3-VL.
-
-* **Host OS:** Ubuntu 22.04 / 24.04 z działającym ROCm
-* **GPU:** AMD Instinct MI50 (gfx906)
-* **Cel:** Wnioskowanie na **GPU (ROCm)**, w tym obsługa modeli multimodalnych (Vision).
-
----
-
-## English Documentation
-
-### 1. What this image includes
-* **Ubuntu 24.04** (minimal rootfs)
-* **AMD ROCm 7.1** userspace (ROCm + HIP)
-* **Ollama** with ROCm backend and Vision Language support
-* Environment tuned for **AMD Instinct MI50 (gfx906)**
-
-### 2. Quick Start (Pull from Docker Hub)
-You can pull the latest pre-built image:
-```bash
-docker pull xxdoman/ollama-amd-rocm71:v1.0.1
-```
-
-### 3. Run the container
-Recommended run with persistent models on host:
-```bash 
-mkdir -p /opt/ollama-models
-
-docker run -d \
-  --name ollama-amd-rocm71-vl \
-  --device=/dev/kfd \
-  --device=/dev/dri/renderD128 \
-  --device=/dev/dri/renderD129 \
-  --group-add video \
-  -p 11434:11434 \
-  -v /opt/ollama-models:/root/.ollama \
-  xxdoman/ollama-amd-rocm71:v1.0.1 \
-  ollama serve
-```
-### 4. Vision Language (VL) Testing
-This image is specifically prepared to handle models like Qwen3-VL. To test it:
-```bash 
-docker exec -it ollama-amd-rocm71-vl ollama run qwen2-vl
-```
-
-#### Polski opis
-Co zawiera obraz
-Ubuntu 24.04 oraz ROCm 7.1 (userspace)
-Ollama z backendem ROCm i wsparciem dla modeli Vision Language
-Optymalizacja pod AMD Instinct MI50 (gfx906)
-Szybkie uruchomienie
-Pobierz gotowy obraz: 
-
-```bash
-docker pull xxdoman/ollama-amd-rocm71:v1.0.1
-```
-
-Uruchomienie z trwałym przechowywaniem modeli:
-
-```bash
-docker run -d \
-  --name ollama-amd-rocm71-vl \
-  --device=/dev/kfd \
-  --device=/dev/dri/renderD128 \
-  --device=/dev/dri/renderD129 \
-  --group-add video \
-  -p 11434:11434 \
-  -v /opt/ollama-models:/root/.ollama \
-  xxdoman/ollama-amd-rocm71:v1.0.1 \
-  ollama serve
-```
-
-### Sprawdzenie statusu GPU
-W logach kontenera powinieneś zobaczyć:
-amdgpu is supported gpu_type=gfx906 oraz library=rocm.
-
-Monitorowanie na hoście:
-
-```bash 
-/opt/rocm/bin/rocm-smi
-```
-
-Docker Hub: xxdoman/ollama-amd-rocm71-vl
-
+Docker Hub (overview):
 https://hub.docker.com/repository/docker/xxdoman/ollama-amd-rocm71-vl/general
+
+Image highlights
+Ollama: 0.13.5
+ROCm: 7.1 (user‑space included in the image)
+GPU target: gfx906 (MI50 / Vega 20)
+Tensile / rocBLAS libraries included
+No models included — models are stored in /models (Docker volume)
+Host ROCm user‑space not required
+Available tags:
+
+latest
+0.13.5-full
+Host requirements
+Linux with AMDGPU/KFD enabled
+Must expose device nodes:
+/dev/kfd
+/dev/dri/renderD*
+Docker
+Quick host checks:
+
+ls -l /dev/kfd
+ls -l /dev/dri/renderD*
+groups
+Run
+Create persistent volume for models:
+
+docker volume create ollama_models
+Run the container:
+
+docker run -d --name ollama-mi50-vl \
+  --device=/dev/kfd \
+  --device-cgroup-rule='c 226:* rmw' \
+  -v /dev/dri:/dev/dri \
+  -v ollama_models:/models \
+  -p 11434:11434 \
+  xxdoman/ollama-amd-rocm71-vl:latest
+Ollama API:
+
+http://localhost:11434
+Pull a model (into the volume)
+Example: Qwen3‑VL 8B
+
+docker exec -it ollama-mi50-vl ollama pull qwen3-vl:8b
+Verify GPU (ROCm)
+Check logs for ROCm/gfx906:
+
+docker logs --tail=200 ollama-mi50-vl | egrep -i 'inference compute|ROCm|gfx906'
+Expected: library=rocm and compute=gfx906.
+
+Quick benchmark (optional)
+Warm‑up curl -s http://127.0.0.1:11434/api/generate \
+-H 'Content-Type: application/json' \
+-d '{"model":"qwen3-vl:8b","prompt":"Warmup.","stream":false,"keep_alive":"10m","options":{"num_predict":64}}' \
+| jq '{eval_count, eval_duration, total_duration}'
+Speed test (tokens/s) for i in 1 2; do
+curl -s http://127.0.0.1:11434/api/generate \
+-H 'Content-Type: application/json' \
+-d '{"model":"qwen3-vl:8b","prompt":"Napisz długi tekst po polsku.","stream":false,"keep_alive":"10m","options":{"num_predict":512,"temperature":0.7}}' \
+| jq '{eval_count, eval_duration, tok_s: (.eval_count / (.eval_duration/1000000000.0))}'
+done
+Example output:
+
+{ "eval_count": 512, "eval_duration": 7573696632, "tok_s": 67.6 }
+Notes
+This image is optimized for MI50 (gfx906). It may work on other Vega 20 / gfx906 GPUs, but not guaranteed.
+MI50 gives you 32 GB VRAM, which is useful for larger models, but performance is slower than modern GPUs.
+License
+MIT
+
+Jeśli chcesz, mogę też przygotować wersję w 100% po polsku (to często wygląda lepiej w repo), ale ta powyżej jest zgodna z Twoim opisem z Docker Hub i przede wszystkim poprawia:
+
+złą nazwę obrazu (...-rocm71-vl, nie ...-rocm71)
+zły mount na modele (/models + volume, nie /root/.ollama)
+poprawny --device-cgroup-rule i -v /dev/dri:/dev/dri
+Jeśli chcesz zachować też tag 0.13.5-full w przykładach (zamiast latest), powiedz tylko, który ma być „domyślny” w README.Ollama 0.13.5 + ROCm 7.1 (VL) for AMD Instinct MI50 (gfx906)
+Docker image with Ollama 0.13.5, ROCm 7.1 user‑space and Tensile libraries (gfx906), tested on AMD Radeon Instinct MI50 32 GB.
+
+Docker Hub (repo):
+https://hub.docker.com/r/xxdoman/ollama-amd-rocm71-vl
+
+Docker Hub (overview):
+https://hub.docker.com/repository/docker/xxdoman/ollama-amd-rocm71-vl/general
+
+Image highlights
+Ollama: 0.13.5
+ROCm: 7.1 (user‑space included in the image)
+GPU target: gfx906 (MI50 / Vega 20)
+Tensile / rocBLAS libraries included
+No models included — models are stored in /models (Docker volume)
+Host ROCm user‑space not required
+Available tags:
+
+latest
+0.13.5-full
+Host requirements
+Linux with AMDGPU/KFD enabled
+Must expose device nodes:
+/dev/kfd
+/dev/dri/renderD*
+Docker
+Quick host checks:
+
+ls -l /dev/kfd
+ls -l /dev/dri/renderD*
+groups
+Run
+Create persistent volume for models:
+
+docker volume create ollama_models
+Run the container:
+
+docker run -d --name ollama-mi50-vl \
+  --device=/dev/kfd \
+  --device-cgroup-rule='c 226:* rmw' \
+  -v /dev/dri:/dev/dri \
+  -v ollama_models:/models \
+  -p 11434:11434 \
+  xxdoman/ollama-amd-rocm71-vl:latest
+Ollama API:
+
+http://localhost:11434
+Pull a model (into the volume)
+Example: Qwen3‑VL 8B
+
+docker exec -it ollama-mi50-vl ollama pull qwen3-vl:8b
+Verify GPU (ROCm)
+Check logs for ROCm/gfx906:
+
+docker logs --tail=200 ollama-mi50-vl | egrep -i 'inference compute|ROCm|gfx906'
+Expected: library=rocm and compute=gfx906.
+
+Quick benchmark (optional)
+Warm‑up curl -s http://127.0.0.1:11434/api/generate \
+-H 'Content-Type: application/json' \
+-d '{"model":"qwen3-vl:8b","prompt":"Warmup.","stream":false,"keep_alive":"10m","options":{"num_predict":64}}' \
+| jq '{eval_count, eval_duration, total_duration}'
+Speed test (tokens/s) for i in 1 2; do
+curl -s http://127.0.0.1:11434/api/generate \
+-H 'Content-Type: application/json' \
+-d '{"model":"qwen3-vl:8b","prompt":"Napisz długi tekst po polsku.","stream":false,"keep_alive":"10m","options":{"num_predict":512,"temperature":0.7}}' \
+| jq '{eval_count, eval_duration, tok_s: (.eval_count / (.eval_duration/1000000000.0))}'
+done
+Example output:
+
+{ "eval_count": 512, "eval_duration": 7573696632, "tok_s": 67.6 }
+Notes
+This image is optimized for MI50 (gfx906). It may work on other Vega 20 / gfx906 GPUs, but not guaranteed.
+MI50 gives you 32 GB VRAM, which is useful for larger models, but performance is slower than modern GPUs.
+License
+MIT
+
+Jeśli chcesz, mogę też przygotować wersję w 100% po polsku (to często wygląda lepiej w repo), ale ta powyżej jest zgodna z Twoim opisem z Docker Hub i przede wszystkim poprawia:
+
+złą nazwę obrazu (...-rocm71-vl, nie ...-rocm71)
+zły mount na modele (/models + volume, nie /root/.ollama)
+poprawny --device-cgroup-rule i -v /dev/dri:/dev/dri
+Jeśli chcesz zachować też tag 0.13.5-full w przykładach (zamiast latest), powiedz tylko, który ma być „domyślny” w README.
