@@ -25,11 +25,13 @@ Must expose device nodes:
 /dev/dri/renderD*
 Docker
 Quick host checks:
-
+```bash
 ls -l /dev/kfd
 ls -l /dev/dri/renderD*
 groups
 Run
+```
+
 Create persistent volume for models:
 ```bash
 docker volume create ollama_models
@@ -67,6 +69,8 @@ curl -s http://127.0.0.1:11434/api/generate \
 -d '{"model":"qwen3-vl:8b","prompt":"Warmup.","stream":false,"keep_alive":"10m","options":{"num_predict":64}}' \
 | jq '{eval_count, eval_duration, total_duration}'
 Speed test (tokens/s) for i in 1 2; do
+```
+```bash
 curl -s http://127.0.0.1:11434/api/generate \
 -H 'Content-Type: application/json' \
 -d '{"model":"qwen3-vl:8b","prompt":"Napisz długi tekst po polsku.","stream":false,"keep_alive":"10m","options":{"num_predict":512,"temperature":0.7}}' \
