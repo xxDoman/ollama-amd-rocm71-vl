@@ -31,10 +31,11 @@ ls -l /dev/dri/renderD*
 groups
 Run
 Create persistent volume for models:
-
+```bash
 docker volume create ollama_models
+```
 Run the container:
-
+```bash
 docker run -d --name ollama-mi50-vl \
   --device=/dev/kfd \
   --device-cgroup-rule='c 226:* rmw' \
@@ -42,21 +43,26 @@ docker run -d --name ollama-mi50-vl \
   -v ollama_models:/models \
   -p 11434:11434 \
   xxdoman/ollama-amd-rocm71-vl:latest
+```
 Ollama API:
 
 http://localhost:11434
 Pull a model (into the volume)
 Example: Qwen3‑VL 8B
-
+```bash
 docker exec -it ollama-mi50-vl ollama pull qwen3-vl:8b
+```
 Verify GPU (ROCm)
 Check logs for ROCm/gfx906:
-
+```bash
 docker logs --tail=200 ollama-mi50-vl | egrep -i 'inference compute|ROCm|gfx906'
+```
 Expected: library=rocm and compute=gfx906.
 
 Quick benchmark (optional)
-Warm‑up curl -s http://127.0.0.1:11434/api/generate \
+Warm up 
+```bash
+curl -s http://127.0.0.1:11434/api/generate \
 -H 'Content-Type: application/json' \
 -d '{"model":"qwen3-vl:8b","prompt":"Warmup.","stream":false,"keep_alive":"10m","options":{"num_predict":64}}' \
 | jq '{eval_count, eval_duration, total_duration}'
@@ -66,12 +72,16 @@ curl -s http://127.0.0.1:11434/api/generate \
 -d '{"model":"qwen3-vl:8b","prompt":"Napisz długi tekst po polsku.","stream":false,"keep_alive":"10m","options":{"num_predict":512,"temperature":0.7}}' \
 | jq '{eval_count, eval_duration, tok_s: (.eval_count / (.eval_duration/1000000000.0))}'
 done
+```
 Example output:
-
+```bash
 { "eval_count": 512, "eval_duration": 7573696632, "tok_s": 67.6 }
+```
 Notes
+
 This image is optimized for MI50 (gfx906). It may work on other Vega 20 / gfx906 GPUs, but not guaranteed.
 MI50 gives you 32 GB VRAM, which is useful for larger models, but performance is slower than modern GPUs.
+
 License
 MIT
 
@@ -107,16 +117,19 @@ Must expose device nodes:
 /dev/dri/renderD*
 Docker
 Quick host checks:
-
+```bash
 ls -l /dev/kfd
 ls -l /dev/dri/renderD*
+```
 groups
 Run
+
 Create persistent volume for models:
-
+```bash
 docker volume create ollama_models
+```
 Run the container:
-
+```bash
 docker run -d --name ollama-mi50-vl \
   --device=/dev/kfd \
   --device-cgroup-rule='c 226:* rmw' \
@@ -124,33 +137,43 @@ docker run -d --name ollama-mi50-vl \
   -v ollama_models:/models \
   -p 11434:11434 \
   xxdoman/ollama-amd-rocm71-vl:latest
+```
 Ollama API:
 
 http://localhost:11434
+
 Pull a model (into the volume)
 Example: Qwen3‑VL 8B
-
+```bash
 docker exec -it ollama-mi50-vl ollama pull qwen3-vl:8b
+```
 Verify GPU (ROCm)
 Check logs for ROCm/gfx906:
-
+```bash
 docker logs --tail=200 ollama-mi50-vl | egrep -i 'inference compute|ROCm|gfx906'
+```
 Expected: library=rocm and compute=gfx906.
 
 Quick benchmark (optional)
-Warm‑up curl -s http://127.0.0.1:11434/api/generate \
+Warm up 
+```bash
+curl -s http://127.0.0.1:11434/api/generate \
 -H 'Content-Type: application/json' \
 -d '{"model":"qwen3-vl:8b","prompt":"Warmup.","stream":false,"keep_alive":"10m","options":{"num_predict":64}}' \
 | jq '{eval_count, eval_duration, total_duration}'
 Speed test (tokens/s) for i in 1 2; do
+```
+```bash
 curl -s http://127.0.0.1:11434/api/generate \
 -H 'Content-Type: application/json' \
 -d '{"model":"qwen3-vl:8b","prompt":"Napisz długi tekst po polsku.","stream":false,"keep_alive":"10m","options":{"num_predict":512,"temperature":0.7}}' \
 | jq '{eval_count, eval_duration, tok_s: (.eval_count / (.eval_duration/1000000000.0))}'
 done
+```
 Example output:
-
+```
 { "eval_count": 512, "eval_duration": 7573696632, "tok_s": 67.6 }
+```
 Notes
 This image is optimized for MI50 (gfx906). It may work on other Vega 20 / gfx906 GPUs, but not guaranteed.
 MI50 gives you 32 GB VRAM, which is useful for larger models, but performance is slower than modern GPUs.
