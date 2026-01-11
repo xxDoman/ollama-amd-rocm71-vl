@@ -1,0 +1,12 @@
+# ROCm / AMD packages
+*.deb
+*.pkg
+*.tgz
+
+# Unpacked ROCm content
+usr/
+906/
+
+# Build / temp
+*.log
+*.tmp
