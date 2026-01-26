@@ -105,7 +105,7 @@ docker run -d --name ollama-mi50-vl \
   -v /dev/dri:/dev/dri \
   -v ollama_models:/models \
   -p 11434:11434 \
-  xxdoman/ollama-amd-rocm71-vl:latest
+  xxdoman/ollama-amd-rocm71-vl:0.13.5-full
 ```
 Ollama API:
 
