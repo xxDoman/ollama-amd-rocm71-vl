@@ -1,8 +1,69 @@
-Ollama 0.13.5 + ROCm 7.1 (VL) for AMD Instinct MI50 (gfx906)
+# Ollama 0.15.1 + ROCm 7.1 (VL) for AMD Instinct MI50 (gfx906)
+Update 2026-01-26: Added support for Ollama v0.15.1. Dedicated Docker image optimized for AMD Instinct MI50 32 GB (gfx906) with ROCm 7.1 user-space and Tensile libraries.
+
+Image Highlights
+Ollama Version: 0.15.1
+
+ROCm Version: 7.1 (included in image, host ROCm not required)
+
+Target Hardware: gfx906 (MI50 / Vega 20)
+
+Optimized Libraries: Full Tensile / rocBLAS support for MI50
+
+Storage Path: Models are stored in /models (volume required)
+
+Optimized Usage (32GB VRAM & 65k Context)
+To leverage the 32GB VRAM for long context (65,536 tokens) with parallel processing, use the following command:
+
+```Bash
+docker run -d --name ollama-mi50-vl \
+  --device=/dev/kfd \
+  --device-cgroup-rule='c 226:* rmw' \
+  -v /dev/dri:/dev/dri \
+  -v ollama_models:/models \
+  -p 11434:11434 \
+  -e OLLAMA_MODELS=/models \
+  -e OLLAMA_NUM_PARALLEL=1 \
+  -e OLLAMA_KV_CACHE_TYPE=q4_0 \
+  -e OLLAMA_MAX_LOADED_MODELS=1 \
+  xxdoman/ollama-amd-rocm71-vl:latest
+```
+---
+Enter the container
+```Bash
+docker exec -it ollama-mi50-vl bash
+```
+Create a modelfile (e.g., for Qwen3) using cat
+```Bash
+cat <<EOF> Modelfile
+FROM qwen3-vl:8b
+PARAMETER num_ctx 65536
+EOF
+```
+Build a new version of the model
+```Bash
+ollama create qwen3-8b-65k -f Modelfile
+```
+---
+Host Requirements
+OS: Linux with AMDGPU/KFD driver enabled.
+
+Device Nodes: Must expose /dev/kfd and /dev/dri/renderD*.
+
+Available Tags
+latest - Always points to the newest stable (currently 0.15.1).
+
+0.13.5-full - Legacy stable version.
+
+----
+
+
+# Ollama 0.13.5 + ROCm 7.1 (VL) for AMD Instinct MI50 (gfx906)
 Docker image with Ollama 0.13.5, ROCm 7.1 user‑space and Tensile libraries (gfx906), tested on AMD Radeon Instinct MI50 32 GB.
 
 Docker Hub (repo):
-https://hub.docker.com/r/xxdoman/ollama-amd-rocm71-vl
+https://hub.docker.com/r/xxdoman/ollama-amd-rocm71-vl 
+- UPDATE 2026-01-26: Support for Ollama v0.15.1
 
 Docker Hub (overview):
 https://hub.docker.com/repository/docker/xxdoman/ollama-amd-rocm71-vl/general
