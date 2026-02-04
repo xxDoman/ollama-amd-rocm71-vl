@@ -1,3 +1,5 @@
+#  -update- Ollama 0.15.4
+
 # Ollama 0.15.1 + ROCm 7.1 (VL) for AMD Instinct MI50 (gfx906)
 Update 2026-01-26: Added support for Ollama v0.15.1. Dedicated Docker image optimized for AMD Instinct MI50 32 GB (gfx906) with ROCm 7.1 user-space and Tensile libraries.
 
